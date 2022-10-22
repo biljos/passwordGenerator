@@ -1,5 +1,10 @@
 const paragraphPassword = document.querySelector("#password")
 const form = document.querySelector("#form")
+const buttonCopy = document.querySelector("#button-copy")
+const inputLength = document.querySelector("#input-length")
+const passwordLenthParagraph = document.querySelector("#password-length") 
+
+const API = "https://goquotes-api.herokuapp.com/api/v1/random?count=5";
 
 const letters = [
     "a",
@@ -32,10 +37,11 @@ const letters = [
   
 const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 const symbols = ["'", ":", "!", "@", "#", "$", "^", ")", "&", "*", "%", "-"];
+let words = []
 
 
 function generatePassword(passwordLenth, checks) {
-    const arrayOfArrays = [];
+    let arrayOfArrays = [];
 
     if(checks.letters){
         arrayOfArrays.push(letters)
@@ -45,6 +51,11 @@ function generatePassword(passwordLenth, checks) {
     }
     if(checks.symbols){
         arrayOfArrays.push(symbols)
+    }
+
+    if(checks.words){
+        arrayOfArrays = []
+        arrayOfArrays.push(words)
     }
     
     let strongPassword = [];
@@ -58,15 +69,42 @@ function generatePassword(passwordLenth, checks) {
         
     }
 
-    strongPassword = strongPassword.join("")
-    paragraphPassword.innerText = `Aqui aparecera tu contraseña ${strongPassword}`
-
-    console.log(strongPassword)
+    if(checks.words){
+        strongPassword = strongPassword.join("-")
+    } else {
+        strongPassword = strongPassword.join("")
+    }
+    
+    paragraphPassword.value = strongPassword
 }
 
 
+function fetchData(API) {
+    fetch(API)
+        .then(response => response.json())
+        .then(data => {
+            words = data.quotes.map((quote) => quote.text);
+            words = words.join("").split(" ").sort();
+        })
+}
+
+fetchData(API)
+
 function getRandomNumber(min, max) {
     return Math.floor(Math.random() * (max - min + 1))
+}
+
+
+function copyToClipboard(target) {
+    const element = document.querySelector(target)
+    const value = element.value
+
+    if (value.length === 0){
+        alert("Tienes que generar una contraseña")
+    } else {
+        window.navigator.clipboard.writeText(value);
+        alert("Copiaste la constraseña");
+    }
 }
 
 
@@ -79,8 +117,25 @@ form.addEventListener("submit", (event) => {
         numbers : formElement.numbers.checked,
         words : formElement.words.checked,
         symbols : formElement.symbols.checked,
+    };
+
+    if(checks.words){
+        formElement.letters.checked = false
+
     }
 
     generatePassword(passwordLength, checks);
+    
+    buttonCopy.disabled = false;
 });
 
+
+
+buttonCopy.addEventListener("click", () => {
+    copyToClipboard("#password")
+});
+
+
+inputLength.addEventListener("input", (e) => {
+    passwordLenthParagraph.innerText = e.target.value;
+});
